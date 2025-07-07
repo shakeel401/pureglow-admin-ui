@@ -9,7 +9,7 @@ st.title("🛠️ Admin Panel – PureGlow Blog Manager")
 st.markdown("Manage your skincare blog content using this admin interface.")
 
 # Tabs for navigation
-tab1, tab2 = st.tabs(["➕ Add New Post", "📋 View / Delete Posts"])
+tab1, tab2 = st.tabs(["➕ Add New Post", "📋 View / Delete / Update Posts"])
 
 # -----------------------------------------------
 # ➕ Tab: Add New Post
@@ -47,36 +47,6 @@ with tab1:
                 st.success("✅ Post created successfully!")
             else:
                 st.error(f"❌ Failed to create post: {res.json().get('detail')}")
-
-# -----------------------------------------------
-# 📋 Tab: View / Delete Posts
-# -----------------------------------------------
-with tab2:
-    st.subheader("📋 All Blog Posts")
-    res = requests.get(API_BASE + "/")
-    if res.status_code == 200:
-        posts = res.json()
-        if not posts:
-            st.info("No posts available.")
-        else:
-            for post in posts:
-                with st.expander(f"📝 {post['title']}"):
-                    st.markdown(f"**Slug:** `{post['slug']}`")
-                    st.markdown(f"**Excerpt:** {post['excerpt']}")
-                    st.markdown(f"**Product URL:** [Link]({post['product_url']})")
-                    st.markdown(f"**Rating:** ⭐ {post.get('rating', 'N/A')}")
-                    st.markdown(f"**Repeat Purchases:** {post.get('repeat_purchases', '')}")
-                    if post.get("thumbnail_url"):
-                        st.image(post["thumbnail_url"], width=200)
-                    if st.button(f"🗑️ Delete '{post['title']}'", key=f"del_{post['id']}"):
-                        del_res = requests.delete(f"{API_BASE}/{post['id']}")
-                        if del_res.status_code == 204:
-                            st.success("Post deleted successfully.")
-                            st.experimental_rerun()
-                        else:
-                            st.error("Failed to delete post.")
-    else:
-        st.error("Failed to load posts. Is the backend running?")
 
 # -----------------------------------------------
 # 📋 Tab: View / Delete / Update Posts
@@ -135,12 +105,16 @@ with tab2:
                             else:
                                 st.error("❌ Failed to update post.")
 
-                    if st.button(f"🗑️ Delete '{post['title']}'", key=f"del_{post['id']}"):
-                        del_res = requests.delete(f"{API_BASE}/{post['id']}")
-                        if del_res.status_code == 204:
-                            st.success("🗑️ Post deleted successfully.")
-                            st.experimental_rerun()
-                        else:
-                            st.error("❌ Failed to delete post.")
+                    # ✅ Safe delete with confirmation checkbox
+                    st.markdown("### 🗑️ Delete Post")
+                    confirm_delete = st.checkbox(f"Yes, I want to delete this post (ID: {post['id']})", key=f"confirm_delete_{post['id']}")
+                    if confirm_delete:
+                        if st.button(f"🗑️ Confirm Delete '{post['title']}'", key=f"del_{post['id']}"):
+                            del_res = requests.delete(f"{API_BASE}/{post['id']}")
+                            if del_res.status_code == 204:
+                                st.success("🗑️ Post deleted successfully.")
+                                st.experimental_rerun()
+                            else:
+                                st.error("❌ Failed to delete post.")
     else:
         st.error("❌ Failed to load posts. Is the backend running?")
